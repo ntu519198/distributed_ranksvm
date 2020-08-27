@@ -1,0 +1,193 @@
+This directory includes sources used in the following thesis:
+
+Wei-Lun Huang, Analysis and Implementation of Large-scale
+Linear RankSVM in Distributed Environments, 2015.
+
+It supports distributed L2-regularized L2-loss linear rankSVM for the following 
+two kinds of splits:
+		
+		Query-wise split (QW)
+		Feature-wise split (FW)
+
+
+System Requirement
+==================
+This experiment is supposed to be run on UNIX machines. The following
+commands are required:
+- UNIX commands (mv, ln, cp, cat, apt-get, etc)
+- bash
+- g++
+- wget
+- make
+- python2.6 or newer versions except python 3.x.
+- Open MPI
+
+
+Quick start
+============
+1.  Setup distributed environments & solvers.
+    (See Setup Distributed Environment & Solvers section for details)
+
+2.  Prepare distributed data sets.
+    (See Prepare Distributed Data Sets section for details)
+
+3.  Edit run_all.sh to set the machinefile you want to use
+    and the command you want to run.
+
+4.  Edit `nr_machine_list' in plot_speedup.py to set the 
+    number of machines you want to compare speedup.
+
+5.  Run all of the experiments.
+
+	$ ./run_all.sh
+
+
+Introduction
+============
+We implement TreeTron-QW, TreeTron-FW, which are distributed trust-region 
+Newton method (TRON) with query-wise and feature-wise splits, respectively.
+
+For query-wise split (default), please type
+
+$ mpirun -n # --machinefile conf/machinefile# solver/train -S 0 your_data
+
+For feature-wise split, please type
+
+$ mpirun -n # --machinefile conf/machinfile# solver/train -S 1 your_data
+
+For the detailed explaination of parameters, please type
+
+$ mpirun -n # --machinefile conf/machinfile# solver/train,
+
+where # is the number of (splits) machines your want to use.
+
+
+Compare TreeTron-QW/TreeTron-FW/TreeTron 
+========================================
+Edit 'all_data' in parameter.py to indicate the data for comparison. Remove the
+data sets that you are not interested in. For example, change
+
+data = ['MSLR','YAHOO_SET1','MQ2007-list','MQ2008-list', 'MQ2007', 'MQ2008', 'AMAZON_poly2']
+
+to
+
+data = ['MSLR','AMAZON_poly2']
+
+After deciding data sets, you must prepare the data sets and
+install the solvers as well as the tools. Please see Sections 'Prepare Data
+Sets for Experiments', 'Installation for Experiments' for more details.
+
+Type
+
+$ python ./run_exp.py conf/machinefile#, 
+
+where # is the number of machines (default 2) 
+you would like to use.
+
+Type
+
+$ python ./plot_qw_fw_comparison.py
+
+to compare solvers. The results are stored in the 'figure/' directory.
+
+Plot speedup with respect to number of machines
+================================================
+Type 
+
+$ python ./run_exp.py conf/machinefile#, 
+
+where # is the number of machines 
+(1, 2, 4, 8, 16 in the default setting).
+
+Type
+
+$ python ./plot_speedup.py QW
+
+for query-wise split, or
+
+$ python ./plot_speedup.py FW
+
+for feature-wise split to show the speedup. 
+The results are stored in the 'figure_speedup/' directory.
+
+
+Prepare Distributed Data Sets 
+=============================
+This section is modified from the README in the experiment code of the following paper: 
+Ching-Pei Lee and Chih-Jen Lin, Large-scale Linear RankSVM, 2013.
+
+Please download those data sets you are interested in from the following sites
+and put them in the directory './data/'.
+You do not need to extract the zip/rar/tgz files.
+After all downloads are finished, type
+
+$ python ./gen_data.py
+
+The script will extract all data sets and conduct pre-processing tasks.
+You can also edit 'gen_data.py' to comment the data sets you are not interested in. For example:
+#data_dict['YAHOO_SET1'] = 'YAHOO/'
+
+For LETOR data sets:
+Download the rar files from
+http://research.microsoft.com/en-us/um/beijing/projects/letor/LETOR4.0/Data/MQ2007.rar
+http://research.microsoft.com/en-us/um/beijing/projects/letor/LETOR4.0/Data/MQ2008.rar
+http://research.microsoft.com/en-us/um/beijing/projects/letor/LETOR4.0/Data/MQ2007-list.rar
+http://research.microsoft.com/en-us/um/beijing/projects/letor/LETOR4.0/Data/MQ2008-list.rar
+The four urls are for MQ2007, MQ2008, MQ2007-list and MQ2008-list,
+respectively.
+
+For MSLR data set:
+Download the zip file from
+http://research.microsoft.com/en-us/um/beijing/projects/mslr/data/MSLR-WEB30K.zip
+
+For Yahoo Learning to Rank Challenge data sets:
+Download the tgz file by entering the following page
+http://webscope.sandbox.yahoo.com/catalog.php?datatype=c
+and select the data "C14 - Yahoo! Learning to Rank Challenge (421 MB)".
+
+For AMAZON Employee Access Challenge data sets:
+Download the csv files by entering the following page
+https://www.kaggle.com/c/amazon-employee-access-challenge/data 
+and put it in the directory data/AMAZON/.
+
+Type 
+
+$ python ./rk_split.py QW your_machinefile your_data 
+
+for query-wisely or 
+
+$ python ./rk_split.py FW your_machinefile your_data 
+
+for feature-wisely splitting your data.
+
+
+Setup Distributed Environments & Solvers
+=======================================
+To start the experiemnts, you must setup the environments and solvers first.
+Type 
+
+$ apt-get install openmpi-bin libopenmpi-dev
+
+on all machines for installing Open MPI.
+
+Edit `conf/machinefile#' (# is the number of machines you want to use)
+to be with the following format (each line is a hostname or an ip):
+	
+	localhost
+	machine2
+	machine3
+
+	Note: Each line should represent an unique machine.
+
+Type
+
+$ mpirun -n # --machinefile conf/machinefile# mkdir -p `pwd`;
+  util/sync_dir.py "`pwd`/solver" `pwd` conf/machinefile#
+
+to copy the sources of solver to all machines.
+
+Type
+
+$ mpirun -n # --machinefile conf/machinefile# make -C solver
+
+to compile solvers on all machines.
